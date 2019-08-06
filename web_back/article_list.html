@@ -268,10 +268,75 @@
         </div>
     </div>
 
+    <!-- 导入模板引擎js文件 -->
+    <script src="./js/template-web.js"></script>
+    <!-- 准备一个模板 -->
+    <script id="article_list" type="text/html">
+        {{each data.data v}}
+        <tr>
+            <td>{{v.title}}</td>
+            <td>{{v.author}}</td>
+            <td>{{v.categoryName}}</td>
+            <td class="text-center">{{v.date}}</td>
+            <td class="text-center">{{v.state}}</td>
+            <td class="text-center">
+                <a href="article_edit.html" class="btn btn-default btn-xs">编辑</a>
+                <a href="#" data-id="{{v.id}}" class="btn btn-danger btn-xs">删除</a>
+            </td>
+        </tr>
+        {{/each}}
+    </script>
+
     <script>
         // 设置左侧菜单
         $('#release_btn').click(function(){
             window.parent.setMenu(1,1);
+        })
+
+        //入口函数
+        $(function(){
+            //申明一个全局变量,用来记录所有的文章类别
+            var cateObjArr = null;
+            //需求:一进来这个文章列表页面 就通过发送ajax请求获取所有的文章类别.
+            $.ajax({
+            url:'http://localhost:8080/admin/category/list',
+            type:'get',
+            success: function(backData){
+                 console.log(backData);
+                 cateObjArr = backData.data;//一个数组,数组里面的元素是一个个对象
+            }
+            });
+
+            //需求:一进到文章列表页面,就显示真实的文章数据
+            //1.一进到页面,就发送ajax请求
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/admin/article/query',
+                data: {
+                    state: '已发布'
+                },
+                success: function (backData) {
+                    if (backData.code == 200) {
+                        //遍历处理backData.data.data
+                        for(var i = 0; i<backData.data.data.length;i++){
+                            for(var j = 0; j<cateObjArr.length;j++){
+                                //判断
+                                if(backData.data.data[i].categoryId == cateObjArr[j].id ){
+                                    //如果相等的话,就取这个分类的名字,添加到backData中去
+                                    backData.data.data[i].categoryName = cateObjArr[j].name;
+                                    break;
+                                }
+                            }
+                        }
+                        console.log(backData);
+                        
+                        //2.把返回的数据通过模板引擎渲染到页面上.
+                        var resHtml = template('article_list', backData);
+                        $('tbody').html(resHtml);
+                    }
+                }
+            });
+
         })
     </script>
 
