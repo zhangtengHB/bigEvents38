@@ -15,6 +15,7 @@
     <script src="js/jedate/js/jedate.js"></script>
     <script src="js/tinymce/js/tinymce/tinymce.min.js"></script>
     <script src="js/tinymce/js/tinymce_setup.js"></script>
+    <script src="./js/moment.js"></script>
 </head>
 
 <body>
@@ -79,6 +80,68 @@
             </form>
         </div>
     </div>
+    <!-- 引入模板引擎js文件 -->
+    <script src="./js/template-web.js"></script>
+    <!-- 准备一个文章类别模板 -->
+    <script id="article_cate" type="text/html">
+       {{each data v}}
+       <option value="{{v.id}}">{{v.name}}</option>
+       {{/each}}
+    </script>
+
+    <script>
+        // 入口函数
+        $(function () {
+            //需求: 一进来页面,显示所有文章分类 文章类别
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/admin/category/list',
+                success: function (backData) {
+                    console.log(backData);
+                    // 2.把这些文章分类信息, 通过模板引擎渲染到页面上.
+                    //调用模板引擎核心方法.
+                    var resHtml = template('article_cate', backData);
+                    $('#article_catelist').html(resHtml);
+                }
+            });
+
+            //需求:页面一进来,就显示当前系统时间.
+            var timeStr = moment().format('YYYY-MM-DD');
+            $('#dateinput').val(timeStr);
+
+
+            //需求: 点击发布按钮发布文章
+            //1.给发布按钮设置点击事件
+            $('.btn-release').on('click', function () {
+                //2.创建formData对象.
+                //  form表单中获取值得标签得有name属性,并且name属性的值和接口的键保持一致
+                var fd = new FormData($('form')[0]);
+                //3.1 富文本编辑器获取到的内容,要追加到formData中.
+                fd.append('content', tinyMCE.activeEditor.getContent());
+                //3.2 已发布这三个字也要追加到fd中.
+                fd.append('state', '已发布');
+                //4.发送ajax请求,
+                $.ajax({
+                    type: 'post',
+                    url: 'http://localhost:8080/admin/article/publish',
+                    data: fd,
+                    contentType: false,
+                    processData: false,
+                    success: function (backData) {
+                        if (backData.code == 200) {
+                            //5.完成后提示一下
+                            alert('发布成功!');
+                        }
+                    }
+                });
+            });
+
+
+        });
+    </script>
+
+
+    </script>
 
 </body>
 
